@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Study Timetable</title>
+<style>
+  :root {
+    --bg: #10151c;
+    --panel: #171f29;
+    --panel-light: #1e2733;
+    --line: #2a3644;
+    --ink: #e7edf3;
+    --ink-dim: #8fa1b3;
+    --tier1: #e0654f;
+    --tier2: #4fa5e0;
+    --tier3: #6fc59a;
+    --accent: #f2b134;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-size: clamp(28px, 5vw, 42px);
+    margin: 0 0 4px;
+  }
+  .sub {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: var(--ink-dim);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .progress-bar-outer {
+    background: var(--panel-light);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--tier3), var(--accent));
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .progress-label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-bottom: 20px;
+  }
+  .day-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .day-tab {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .day-tab.active {
+    background: var(--accent);
+    color: #1a1305;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  .day-tab:hover:not(.active) { border-color: var(--ink-dim); }
+
+  .block {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+  }
+  .block:active { transform: scale(0.98); }
+  .block.tier1 { border-left-color: var(--tier1); }
+  .block.tier2 { border-left-color: var(--tier2); }
+  .block.tier3 { border-left-color: var(--tier3); }
+  .block.rest { border-left-color: var(--ink-dim); }
+  .block.done { opacity: 0.4; }
+  .block.done .subject { text-decoration: line-through; }
+
+  .time {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    color: var(--ink-dim);
+    line-height: 1.3;
+  }
+  .subject {
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .tag {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-dim);
+    margin-top: 2px;
+  }
+  .check {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg);
+    font-size: 14px;
+    background: transparent;
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .check.checked {
+    background: var(--tier3);
+    border-color: var(--tier3);
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 26px 0 8px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .reset-btn {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 20px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .reset-btn:hover { border-color: var(--tier1); color: var(--tier1); }
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Weekly Study Timetable</h1>
+  <div class="sub">Tap a subject to mark it done. Progress is tracked per day.</div>
+
+  <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+  <div class="progress-label" id="progressLabel">0 of 0 blocks complete</div>
+
+  <div class="day-tabs" id="dayTabs"></div>
+  <div id="blockList"></div>
+
+  <div class="legend">
+    <span><div class="dot" style="background:#e0654f"></div> Tier 1 — Heavy (Math, Physics, Chemistry)</span>
+    <span><div class="dot" style="background:#4fa5e0"></div> Tier 2 — Moderate (Biology, English)</span>
+    <span><div class="dot" style="background:#6fc59a"></div> Tier 3 — Light (Geography, Civic Ed, PE)</span>
+    <span><div class="dot" style="background:#8fa1b3"></div> Rest</span>
+  </div>
+  
+  <div class="btn-group">
+    <button class="reset-btn" id="resetBtn">Reset today's progress</button>
+    <button class="reset-btn" id="saveBtn">💾 Save Progress</button>
+    <button class="reset-btn" id="loadBtn">📂 Load Progress</button>
+  </div>
+</div>
+
+<script>
+const schedule = {
+  "Mon": [
+    ["8:00–8:50", "Math", "tier1"], ["8:50–9:00", "Break", "rest"],
+    ["9:00–9:50", "Physics", "tier1"], ["9:50–10:00", "Break", "rest"],
+    ["10:00–10:50", "Chemistry", "tier1"], ["10:50–11:15", "Long Break", "rest"],
+    ["11:15–12:05", "Biology", "tier2"], ["12:05–12:15", "Break", "rest"],
+    ["12:15–1:05", "English", "tier2"], ["1:05–1:15", "Break", "rest"],
+    ["1:15–1:35", "Geography", "tier3"], ["1:35–1:55", "Civic Education", "tier3"],
+    ["1:55–2:15", "Physical Education", "tier3"]
+  ],
+  "Tue": [
+    ["8:00–8:50", "Chemistry", "tier1"], ["8:50–9:00", "Break", "rest"],
+    ["9:00–9:50", "Biology", "tier2"], ["9:50–10:00", "Break", "rest"],
+    ["10:00–10:50", "Math", "tier1"], ["10:50–11:15", "Long Break", "rest"],
+    ["11:15–12:05", "Physics", "tier1"], ["12:05–12:15", "Break", "rest"],
+    ["12:15–1:05", "English", "tier2"], ["1:05–1:15", "Break", "rest"],
+    ["1:15–1:35", "Civic Education", "tier3"], ["1:35–1:55", "Geography", "tier3"],
+    ["1:55–2:15", "Physical Education", "tier3"]
+  ],
+  "Wed": [
+    ["8:00–8:50", "English", "tier2"], ["8:50–9:00", "Break", "rest"],
+    ["9:00–9:50", "Math (review)", "tier1"], ["9:50–10:00", "Break", "rest"],
+    ["10:00–10:50", "Physics (review)", "tier1"], ["10:50–11:15", "Long Break", "rest"],
+    ["11:15–12:05", "Chemistry", "tier1"], ["12:05–12:15", "Break", "rest"],
+    ["12:15–1:05", "Biology", "tier2"], ["1:05–1:15", "Break", "rest"],
+    ["1:15–1:35", "Geography", "tier3"], ["1:35–1:55", "Civic Education", "tier3"],
+    ["1:55–2:15", "Physical Education", "tier3"]
+  ],
+  "Thu": [
+    ["8:00–8:50", "Physics", "tier1"], ["8:50–9:00", "Break", "rest"],
+    ["9:00–9:50", "Chemistry", "tier1"], ["9:50–10:00", "Break", "rest"],
+    ["10:00–10:50", "Math", "tier1"], ["10:50–11:15", "Long Break", "rest"],
+    ["11:15–12:05", "English", "tier2"], ["12:05–12:15", "Break", "rest"],
+    ["12:15–1:05", "Biology", "tier2"], ["1:05–1:15", "Break", "rest"],
+    ["1:15–1:35", "Civic Education", "tier3"], ["1:35–1:55", "Physical Education", "tier3"],
+    ["1:55–2:15", "Geography", "tier3"]
+  ],
+  "Fri": [
+    ["8:00–8:50", "Math (full review)", "tier1"], ["8:50–9:00", "Break", "rest"],
+    ["9:00–9:50", "Physics (full review)", "tier1"], ["9:50–10:00", "Break", "rest"],
+    ["10:00–10:50", "Chemistry (full review)", "tier1"], ["10:50–11:15", "Long Break", "rest"],
+    ["11:15–12:05", "Biology", "tier2"], ["12:05–12:15", "Break", "rest"],
+    ["12:15–1:05", "English", "tier2"], ["1:05–1:15", "Break", "rest"],
+    ["1:15–1:35", "Geography", "tier3"], ["1:35–1:55", "Civic Education", "tier3"],
+    ["1:55–2:15", "Physical Education", "tier3"]
+  ],
+  "Sat": [
+    ["9:00–9:20", "Geography (light review)", "tier3"], ["9:20–9:30", "Break", "rest"],
+    ["9:30–9:50", "Civic Education (light review)", "tier3"], ["9:50–10:00", "Break", "rest"],
+    ["10:00–10:20", "Physical Education (light review)", "tier3"], ["10:20–10:30", "Break", "rest"],
+    ["10:30–11:15", "Practice test — any Tier 1 subject", "tier1"]
+  ],
+  "Sun": [
+    ["No fixed blocks", "Rest day — light optional review only", "rest"]
+  ]
+};
+
+let state = {};
+let currentDay = "Mon";
+
+function tagLabel(tag) {
+  if (tag === "tier1") return "Tier 1 · Heavy";
+  if (tag === "tier2") return "Tier 2 · Moderate";
+  if (tag === "tier3") return "Tier 3 · Light";
+  return "Rest";
+}
+
+function render() {
+  const tabsEl = document.getElementById("dayTabs");
+  tabsEl.innerHTML = "";
+  Object.keys(schedule).forEach(day => {
+    const btn = document.createElement("button");
+    btn.className = "day-tab" + (day === currentDay ? " active" : "");
+    btn.textContent = day;
+    btn.onclick = () => { currentDay = day; render(); };
+    tabsEl.appendChild(btn);
+  });
+
+  const listEl = document.getElementById("blockList");
+  listEl.innerHTML = "";
+  const blocks = schedule[currentDay];
+  if (!state[currentDay]) state[currentDay] = blocks.map(() => false);
+
+  let doneCount = 0;
+  const studyBlocks = blocks.filter(b => b[2] !== "rest").length;
+  let studyDone = 0;
+
+  blocks.forEach((b, i) => {
+    const [time, subject, tag] = b;
+    const row = document.createElement("div");
+    row.className = "block " + tag + (state[currentDay][i] ? " done" : "");
+
+    const timeEl = document.createElement("div");
+    timeEl.className = "time";
+    timeEl.textContent = time;
+
+    const subEl = document.createElement("div");
+    subEl.innerHTML = `<div class="subject">${subject}</div><div class="tag">${tagLabel(tag)}</div>`;
+
+    const check = document.createElement("div");
+    check.className = "check" + (state[currentDay][i] ? " checked" : "");
+    check.textContent = state[currentDay][i] ? "✓" : "";
+    check.onclick = () => {
+      state[currentDay][i] = !state[currentDay][i];
+      render();
+      if (typeof saveProgress === 'function') {
+        saveProgress();
+      }
+    };
+
+    row.appendChild(timeEl);
+    row.appendChild(subEl);
+    row.appendChild(check);
+    listEl.appendChild(row);
+
+    if (state[currentDay][i] && tag !== "rest") studyDone++;
+    if (state[currentDay][i]) doneCount++;
+  });
+
+  const pct = studyBlocks ? Math.round((studyDone / studyBlocks) * 100) : 0;
+  document.getElementById("progressBar").style.width = pct + "%";
+  document.getElementById("progressLabel").textContent =
+    `${studyDone} of ${studyBlocks} study blocks complete (${pct}%)`;
+}
+
+document.getElementById("resetBtn").onclick = () => {
+  state[currentDay] = schedule[currentDay].map(() => false);
+  render();
+  if (typeof saveProgress === 'function') {
+    saveProgress();
+  }
+};
+
+// Save and Load buttons
+document.getElementById('saveBtn').onclick = function() {
+  if (typeof saveProgress === 'function') {
+    saveProgress();
+    alert('✅ Progress saved!');
+  } else {
+    alert('⚠️ Save function not ready yet');
+  }
+};
+
+document.getElementById('loadBtn').onclick = function() {
+  if (typeof loadProgress === 'function') {
+    loadProgress();
+    alert('✅ Progress loaded!');
+  } else {
+    alert('⚠️ Load function not ready yet');
+  }
+};
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+import { Filesystem, Directory } from '@capacitor/filesystem';
+
+async function saveProgress() {
+  try {
+    const data = JSON.stringify(state);
+    await Filesystem.writeFile({
+      path: 'study_progress.json',
+      data: data,
+      directory: Directory.Documents,
+      encoding: 'utf-8'
+    });
+    console.log('Progress saved!');
+  } catch (e) {
+    console.error('Save error:', e);
+  }
+}
+
+async function loadProgress() {
+  try {
+    const result = await Filesystem.readFile({
+      path: 'study_progress.json',
+      directory: Directory.Documents,
+      encoding: 'utf-8'
+    });
+    const savedState = JSON.parse(result.data);
+    Object.keys(savedState).forEach(day => {
+      if (schedule[day]) {
+        state[day] = savedState[day];
+      }
+    });
+    render();
+    console.log('Progress loaded!');
+  } catch (e) {
+    console.log('No saved progress found');
+  }
+}
+
+// Make functions available globally
+window.saveProgress = saveProgress;
+window.loadProgress = loadProgress;
+
+// Load progress when app starts
+loadProgress();
