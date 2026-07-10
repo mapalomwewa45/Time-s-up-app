@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-Times-up-app
+
 jobs:
   build:
     runs-on: ubuntu-latest
