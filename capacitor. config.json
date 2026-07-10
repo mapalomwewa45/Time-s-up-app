@@ -1,7 +1,7 @@
 {
-  "appId": "com.timesup.study",
+  "appId": "com.mapalomwewa.timesupapp",
   "appName": "Time's Up",
-  "webDir": "www",
+  "webDir": "dist",
   "bundledWebRuntime": false,
   "android": {
     "allowMixedContent": true,
